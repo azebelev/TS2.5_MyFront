@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="./style.css">
+	<title>Document</title>
+
+</head>
+
+<body>
+	<header>
+		<div class="left">
+			<h1>Ш</h1>
+			<span class="plus">++</span>
+			<h2>тудушки от Андрюшки</h2>
+		</div>
+		<div class="right">
+			<div class="auth_log_bth">
+				<button onclick="show_settings()">Настройки</button>
+				<button id=login_btn onclick="show_enter()">Войти</button>
+				<button id="register_btn" onclick="show_register()">зарегистрироваться</button>
+				<button id="logout_btn" onclick="logout()">Выйти</button>
+			</div>
+		</div>
+	</header>
+	<section class="settings">
+		<div class="container">
+			<div>
+				<h3>Настройки приложения</h3>
+				<label for="apiURL">Api URL:</label>
+				<input type="text" id="apiURL" value="http://localhost:8080/api/">
+				<label for="backendLanguage">На каком языке бекенд?</label><br>
+				<select id="backendLanguage">
+					<option value="JS">JS</option>
+					<option value="PHP">PHP</option>
+				</select>
+				<label for="ApiVersion">ApiVersion</label>
+				<select id="ApiVersion">
+					<option value="v1">v1</option>
+					<option value="v2">v2</option>
+				</select>
+				<button type="submit" onclick="setSettings()">Сохранить настройки</button>
+			</div>
+		</div>
+	</section>
+
+	<section class="auth">
+		<div class="container">
+			<div>
+				<h3 class="register_visible">Регистрация</h3>
+				<h3 class="login_visible">Вход</h3>
+				<label for="login">Логин</label>
+				<input type="text" id="login" placeholder="yaropolk@example.com" autofocus required>
+				<label for="pass">Пароль</label>
+				<input  type="text" id="pass" placeholder="**********" autofocus required>
+				<button class="register_visible" type="submit" onclick="registration()">Зарегистрироваться</button>
+				<button class="login_visible" type="submit" onclick="login()">Войти</button>
+			</div>
+		</div>
+	</section>
+	<section class="todoApp">
+		<div class="container">
+      <div>
+         <h3>Введите задачу</h3>
+           <input id="new_task" type="text" placeholder="купить SpaceX">
+					 <button type="submit" onclick="addTask()">Сохранить задачу</button>
+					 <br>
+				 	<div  id="tasks"></div>
+				</div>
+		</div>
+
+
+	</section>
+	<script>
+    
+		//methods for changing pages
+
+		function show_settings() {
+			document.querySelector('.settings').style.display = 'block'
+			document.querySelector('.auth').style.display = 'none'
+			document.querySelector('.todoApp').style.display = 'none'
+		}
+		function show_enter() {
+			document.querySelector('.auth').style.display = 'block'
+			document.querySelector('.settings').style.display = 'none'
+			document.querySelector('.todoApp').style.display = 'none'
+			Array.from(document.getElementsByClassName('login_visible')).forEach(e => e.style.display = 'block')
+			Array.from(document.getElementsByClassName('register_visible')).forEach(e => e.style.display = 'none')
+		}
+		function show_register() {
+			document.querySelector('.auth').style.display = 'block'
+			document.querySelector('.settings').style.display = 'none'
+			document.querySelector('.todoApp').style.display = 'none'
+			Array.from(document.getElementsByClassName('login_visible')).forEach(e => e.style.display = 'none')
+			Array.from(document.getElementsByClassName('register_visible')).forEach(e => e.style.display = 'block')
+		}
+		function show_todoApp() {
+			document.querySelector('.todoApp').style.display = 'block'
+			document.querySelector('.settings').style.display = 'none'
+			document.querySelector('.auth').style.display = 'none'
+			document.querySelector('#logout_btn').style.display = 'inline'
+			document.querySelector('#login_btn').style.display = 'none'
+			document.querySelector('#register_btn').style.display = 'none'
+		}
+    function createTask(checked, taskText, _id,counter) {
+			const text_decoration = checked ? 'line-through' : 'none'
+			const checkbox_checked = checked ? 'checked' : ''
+			const newTask = document.createElement('div')
+			newTask.id = _id
+			newTask.innerHTML = `<span>${counter}</span>
+				<input class="task_check" type="checkbox" ${checkbox_checked} onclick="updateTask()">
+			<span class="task_text" style="text-decoration:${text_decoration}">${taskText}</span>
+			<span class="edit_btn" onclick="edit()">✎️ </span>
+			<input class="task_input" type="text" style="display:none;" value=${taskText} onsubmit="updateTask()">
+			<span class="save_btn" style="display: none;" onclick="updateTask()"> 💾</span>
+			<span class="delete_btn" onclick="deleteItem()"> ✕  </span>
+			<br>`
+
+			return newTask
+		}
+
+     function createTasksList(tasks) {
+			let tasksList = document.querySelector('#tasks')
+			const newTaskList = document.createElement('div')
+			if(tasks.length > 0) {
+				for(let i = 0;i < tasks.length;i++) {
+					newTaskList.appendChild(createTask(tasks[i].checked, tasks[i].text,tasks[i]._id, i + 1))
+				}
+				tasksList.innerHTML = newTaskList.innerHTML
+				} else {
+					tasksList.innerHTML = '<div>На данный момент задачь нет</div>'
+				}
+		}
+		function edit() {
+			const task =  event.target.parentElement
+			task.querySelector(`.edit_btn`).style.display = 'none'
+       task.querySelector(`.task_text`).style.display = 'none'
+			 task.querySelector(`.task_input`).style.display = 'inline'
+			 task.querySelector(`.save_btn`).style.display = 'inline'
+		}
+
+
+		//methods for app interaction
+
+		const app = {}
+		app.backendSuffix = ''
+    app.apiVersion = 'v1'
+		app.apiURL = 'http://localhost:8080/api/'
+
+		function setSettings() {
+			app.apiURL = document.querySelector('#apiURL').value
+			app.backendLanguage = document.querySelector('#backendLanguage').value
+			app.backendSuffix = app.backendLanguage === 'PHP' ? '.php' : ''
+			app.apiVersion = document.querySelector('#ApiVersion').value
+			getTasks()
+		}
+		
+		function getTasks() {
+			const route = app.apiVersion === 'v1' ? '/items' : '/router';
+			const qs = { action: app.apiVersion === 'v1' ? '' : 'getItems' };
+			fetch(app.apiURL + app.apiVersion + route + app.backendSuffix + '?' + new URLSearchParams(qs), {
+				credentials: 'include',
+				method: app.apiVersion === 'v1' ? 'GET' : 'POST',
+			})
+				.then(res => res.json())
+				.then((response) => {
+					if (response.error === 'forbidden') {
+						show_enter()
+					} else {
+						app.tasks = response.items.map((item) => {
+							item.editable = false;
+							return item;
+						})
+						createTasksList(app.tasks)
+						show_todoApp();
+					}
+				}).catch((error) => {
+					alert(error);
+				})
+		}
+		function login() {
+			app.login = document.querySelector('#login').value
+			app.pass = document.querySelector('#pass').value
+			if (app.login.trim() !== '' && app.pass.trim()) {
+				let params = JSON.stringify({ login: app.login, pass: app.pass });
+				const route = app.apiVersion === 'v1' ? '/login' : '/router';
+				const qs = { action: app.apiVersion === 'v1' ? '' : 'login' };
+				fetch(app.apiURL + app.apiVersion + route + app.backendSuffix + '?' + new URLSearchParams(qs), {
+					method: app.apiVersion === 'v1' ? 'POST' : 'POST',
+					credentials: 'include',
+					headers: {
+						'Content-Type': 'application/json'
+					},
+					body: params
+				})
+					.then(res => res.json())
+					.then(response => {
+						if (response.ok) {
+							localStorage.setItem('name', app.login);
+							getTasks();
+						document.querySelector('#logout_btn').style.display = 'inline-block'
+
+						} else if (response.error === 'not found') {
+							alert('Такая комбинация логина и пароля не найдена');
+						} else {
+							alert("Произошла ошибка. Посмотрите консоль разработчика чтоб увидеть подробности.")
+						}
+					})
+			}
+		}
+		function registration() {
+			app.login = document.querySelector('#login').value
+			app.pass = document.querySelector('#pass').value
+			if (app.login.trim() !== '' && app.pass.trim()) {
+				let params = JSON.stringify({ login: app.login, pass: app.pass });
+				const route = app.apiVersion === 'v1' ? '/register' : '/router';
+				const qs = { action: app.apiVersion === 'v1' ? '' : 'register' };
+				fetch(app.apiURL + app.apiVersion + route + app.backendSuffix + '?' + new URLSearchParams(qs), {
+					method: app.apiVersion === 'v1' ? 'POST' : 'POST',
+					body: params,
+					headers: {
+						'Content-Type': 'application/json'
+					},
+				})
+					.then(res => res.json())
+					.then((response) => {
+						if (response.ok) {
+							login();
+						} else {
+							alert("Произошла ошибка. Посмотрите консоль разработчика чтоб увидеть подробности.")
+						}
+					});
+			}
+		}
+		function logout() {
+			const route = app.apiVersion === 'v1' ? '/logout' : '/router';
+			const qs = { action: app.apiVersion === 'v1' ? '' : 'logout' };
+			fetch(app.apiURL + app.apiVersion + route, {
+				method: app.apiVersion === 'v1' ? 'POST' : 'POST',
+				credentials: 'include',
+			}).then(res => res.json())
+				.then((response) => {
+					if (response.ok) {
+						localStorage.clear();
+						show_enter()
+						document.querySelector('#register_btn').style.display = 'inline-block'
+						document.querySelector('#logout_btn').style.display = 'none'
+					}
+				});
+		}
+		function addTask() {
+			const new_task = document.querySelector('#new_task')
+			      if (new_task.value.trim() !== '') {
+        let request = JSON.stringify({ text:new_task.value });
+        const route = app.apiVersion === 'v1' ? '/items' : '/router';
+        const qs = { action: app.apiVersion === 'v1' ? '' : 'createItem' };
+        fetch(app.apiURL + app.apiVersion + route + app.backendSuffix + '?' + new URLSearchParams(qs), {
+          method: app.apiVersion === 'v1' ? 'POST' : 'POST',
+          body: request,
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+        }).then(res => res.json())
+          .then((response) => {
+            if (response.id) {
+							new_task.value = ''
+              getTasks();
+            } else {
+              alert("Произошла ошибка. Посмотрите консоль разработчика чтоб увидеть подробности.")
+            }
+          });
+      }
+    }
+
+		function updateTask() {
+			const task = event.target.parentElement
+			const task_check = task.querySelector(`.task_check`).checked
+      const task_text = task.querySelector(`.task_input`).value
+
+      let request = JSON.stringify({ text: task_text, id: task.id, checked: task_check });
+      const route = app.apiVersion === 'v1' ? '/items' : '/router';
+      const qs = { action: app.apiVersion === 'v1' ? '' : 'editItem' };
+      fetch(app.apiURL + app.apiVersion + route + app.backendSuffix + '?' + new URLSearchParams(qs), {
+        method: app.apiVersion === 'v1' ? 'PUT' : 'POST',
+        body: request,
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+      })
+        .then(res => res.json())
+        .then(() => {
+          getTasks()
+        });
+    }
+
+		function deleteItem() {
+			const task_id = event.target.parentElement.id
+
+			 let request = JSON.stringify({ id: task_id, });
+      const route = app.apiVersion === 'v1' ? '/items' : '/router';
+      const qs = { action: app.apiVersion === 'v1' ? '' : 'deleteItem' };
+      fetch(app.apiURL + app.apiVersion + route + app.backendSuffix + '?' + new URLSearchParams(qs), {
+        method: app.apiVersion === 'v1' ? 'DELETE' : 'POST',
+        body: request,
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+      }).then(res => res.json())
+        .then((response) => {
+          if (response['ok'] === true) {
+            getTasks()
+          } else {
+            alert("Произошла ошибка. Посмотрите консоль разработчика чтоб увидеть подробности.")
+          }
+        });
+		}
+	</script>
+</body>
+
+</html>
